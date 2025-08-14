@@ -6,12 +6,16 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 @Controller
 public class LiveChatController {
 
     @MessageMapping("/new-message")
     @SendTo("/topics/livechat")
     public ChatOutput newMessage(ChatInput input) {
-        return new ChatOutput(HtmlUtils.htmlEscape(input.user() + ": " + input.message()));
+        String time = new SimpleDateFormat("HH:mm").format(new Date());
+        return new ChatOutput(HtmlUtils.htmlEscape("[" + time + "] "+ input.user() + ": " + input.message()));
     }
 }
