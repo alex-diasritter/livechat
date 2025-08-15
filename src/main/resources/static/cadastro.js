@@ -8,19 +8,44 @@ $(function () {
 
         if (password !== confirmPassword) {
             // Em uma aplicação real, você usaria uma caixa de diálogo personalizada
-            // ou exibiria uma mensagem de erro na página.
-            alert("As senhas não coincidem!");
+            // ou exibiria uma mensagem de erro em uma div na página.
+            alert("As senhas não coincidem! Por favor, digite senhas iguais.");
             return;
         }
 
-        // Em uma aplicação real, você enviaria essas informações para o seu backend
-        // via AJAX (fetch ou jQuery.ajax) para processar o registro.
-        console.log("Tentando cadastrar novo usuário:", { username, password });
+        // Prepara os dados para enviar ao backend.
+        // Geralmente, o backend de registro não precisa de 'confirmPassword'.
+        const registrationData = {
+            username: username,
+            password: password
+        };
 
-        // Simula o sucesso da chamada da API e redireciona para a página de login.
-        setTimeout(() => {
-            alert("Cadastro realizado com sucesso! Faça login para continuar.");
-            window.location.href = "/index.html"; // Redireciona para a página de login
-        }, 500); // Simula um pequeno atraso de rede
+        // Faz a chamada POST para o endpoint /users do seu backend
+        $.ajax({
+            type: "POST",
+            url: "/users", // Endpoint de registro no seu backend Spring Boot
+            contentType: "application/json", // Indica que estamos enviando JSON
+            data: JSON.stringify(registrationData), // Converte os dados para JSON
+            success: function(response) {
+                console.log("Cadastro bem-sucedido!", response);
+                // Exibe uma mensagem de sucesso e redireciona para a página de login.
+                alert("Cadastro realizado com sucesso! Agora você pode fazer login.");
+                window.location.href = "/index.html"; // Redireciona para a página de login
+            },
+            error: function(xhr, status, error) {
+                // Lida com erros de cadastro (ex: usuário já existe, validação falhou)
+                console.error("Erro no cadastro:", xhr.responseText);
+                let errorMessage = "Falha no cadastro! Tente novamente.";
+                try {
+                    const errorJson = JSON.parse(xhr.responseText);
+                    if (errorJson.message) {
+                        errorMessage = "Falha no cadastro: " + errorJson.message;
+                    }
+                } catch (e) {
+                    // Se a resposta de erro não for JSON, usa a mensagem padrão
+                }
+                alert(errorMessage);
+            }
+        });
     });
 });
