@@ -39,12 +39,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        .requestMatchers("/livechat").hasAnyRole()
-                        .requestMatchers("livechat-wensocket").hasAnyRole()
-                .anyRequest().authenticated())
+                        .requestMatchers("/", "/cadastro.html", "cadastro.js", "/index.html", "/login.js", "/main.css").permitAll()
+                        .requestMatchers("/livechat-websocket/**").authenticated() // Protege o WebSocket, exige autenticação para a conexão
+                        .anyRequest().authenticated()
+                )
                 .csrf(csrf -> csrf.disable())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .oauth2Login(oauth2 -> oauth2
+                        .defaultSuccessUrl("/chat.html", true)
+                        .loginPage("/index.html")
+                )
+                .oauth2ResourceServer(oauth2 ->
+                        oauth2.jwt(Customizer.withDefaults()))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)); //Mudar para IF_REQUIRED ou ALWAYS se usar OAuth2Login
 
         return http.build();
     }
@@ -65,5 +72,4 @@ public class SecurityConfig {
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }
