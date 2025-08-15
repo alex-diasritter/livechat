@@ -1,5 +1,8 @@
 const stompClient = new StompJs.Client({
-    brokerURL: 'ws://' + window.location.host + '/livechat-websocket'
+    webSocketFactory: function() {
+        // Use SockJS for better browser compatibility
+        return new SockJS('/livechat-websocket');
+    }
 });
 
 stompClient.onConnect = (frame) => {
@@ -12,6 +15,7 @@ stompClient.onConnect = (frame) => {
 
 stompClient.onWebSocketError = (error) => {
     console.error('Error with websocket', error);
+    console.error('WebSocket connection failed. Check if server is running and WebSocket endpoint is accessible.');
 };
 
 stompClient.onStompError = (frame) => {
@@ -33,21 +37,23 @@ function setConnected(connected) {
 function connect() {
     // *** LÓGICA ATUALIZADA: Recuperar o JWT e adicionar aos cabeçalhos ***
     const jwtToken = localStorage.getItem('jwt_token'); // Pega o token do localStorage
-
+    
     if (!jwtToken) {
-        // Se não houver token, alerta o usuário e o redireciona para a página de login
-        alert("Você não está logado ou sua sessão expirou. Por favor, faça login novamente.");
-        window.location.href = "/index.html";
-        return; // Impede a conexão se não houver token
+        alert('Por favor, faça login primeiro para acessar o chat.');
+        window.location.href = '/index.html';
+        return;
     }
-
+    
+    console.log('JWT Token encontrado:', jwtToken.substring(0, 20) + '...');
+    
     // Adiciona o cabeçalho Authorization com o token JWT
-    // O formato padrão é "Bearer <TOKEN>"
     const headers = {
         'Authorization': 'Bearer ' + jwtToken
     };
 
     stompClient.connectHeaders = headers; // Define os cabeçalhos para a conexão WebSocket
+    
+    console.log('Tentando conectar ao WebSocket...');
     stompClient.activate(); // Ativa a conexão WebSocket
 }
 
