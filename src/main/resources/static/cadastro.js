@@ -7,8 +7,6 @@ $(function () {
         const confirmPassword = $("#confirmPassword").val();
 
         if (password !== confirmPassword) {
-            // Em uma aplicação real, você usaria uma caixa de diálogo personalizada
-            // ou exibiria uma mensagem de erro em uma div na página.
             alert("As senhas não coincidem! Por favor, digite senhas iguais.");
             return;
         }
@@ -34,7 +32,7 @@ $(function () {
             },
             error: function(xhr, status, error) {
                 // Lida com erros de cadastro (ex: usuário já existe, validação falhou)
-                console.error("Erro no cadastro:", xhr.responseText);
+                console.error("Usuario ja cadastrado:", xhr.responseText);
                 let errorMessage = "Falha no cadastro! Tente novamente.";
                 try {
                     const errorJson = JSON.parse(xhr.responseText);

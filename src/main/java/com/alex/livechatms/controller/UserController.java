@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional; // Importar Optional
+// import java.util.Set; // Remova esta importação se não for mais utilizada
 
 @RestController
 public class UserController {
@@ -37,19 +38,39 @@ public class UserController {
     @PostMapping("/users")
     public ResponseEntity<Void> newUser(@RequestBody CreateUserDto dto) {
 
-        var basicRole = roleRepository.findByName(Role.Values.BASIC.name());
+        System.out.println("DEBUG: Iniciando newUser para username: " + dto.username());
+
+        // Procura pela role "BASIC".
+        Optional<Role> basicRoleOptional = roleRepository.findByName(Role.Values.BASIC.name());
+        Role basicRole;
+
+        if (basicRoleOptional.isPresent()) {
+            basicRole = basicRoleOptional.get();
+            System.out.println("DEBUG: Role 'BASIC' encontrada no DB: " + basicRole.getName() + " (ID: " + basicRole.getRoleId() + ")");
+        } else {
+            System.out.println("DEBUG: Role 'BASIC' não encontrada no DB, tentando criar e salvar.");
+            Role newRole = new Role();
+            newRole.setName(Role.Values.BASIC.name());
+            basicRole = roleRepository.save(newRole); // Salva a nova role no DB
+            System.out.println("DEBUG: Role 'BASIC' criada e salva via UserController: " + basicRole.getName() + " (ID: " + basicRole.getRoleId() + ")");
+        }
+
+        System.out.println("DEBUG: Valor final de basicRole antes de setRole(): " + (basicRole == null ? "NULL" : basicRole.getName() + " (ID: " + basicRole.getRoleId() + ")"));
 
         var userFromDb = userRepository.findByUsername(dto.username());
         if (userFromDb.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY);
+            System.out.println("DEBUG: Usuário " + dto.username() + " já existe.");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Usuário já existe.");
         }
 
         var user = new User();
         user.setUsername(dto.username());
         user.setPassword(passwordEncoder.encode(dto.password()));
-        user.setRoles(Set.of(basicRole));
+        // LINHA 50: CORRIGIDO de setRoles(Set.of(basicRole)) para setRole(basicRole)
+        user.setRole(basicRole);
 
         userRepository.save(user);
+        System.out.println("DEBUG: Usuário " + dto.username() + " salvo com sucesso.");
 
         return ResponseEntity.ok().build();
     }

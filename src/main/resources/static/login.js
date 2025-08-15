@@ -15,10 +15,10 @@ $(function () {
             success: function(response) {
                 console.log("Login bem-sucedido!", response);
 
-                // *** NOVA LÓGICA: Extrair e armazenar o JWT ***
-                if (response && response.token) { // Assumindo que o token vem no campo 'token'
-                    localStorage.setItem('jwt_token', response.token); // Armazena o token no localStorage
-                    console.log("JWT Token armazenado:", response.token);
+                // *** LÓGICA CORRIGIDA: Extrair e armazenar o JWT de 'accessToken' ***
+                if (response && response.accessToken) { // AGORA PROCURA POR 'accessToken'
+                    localStorage.setItem('jwt_token', response.accessToken); // Armazena o token no localStorage
+                    console.log("JWT Token armazenado:", response.accessToken);
                     window.location.href = "/chat.html"; // Redireciona para a página de chat
                 } else {
                     console.error("Login bem-sucedido, mas nenhum token JWT foi recebido na resposta.");
@@ -34,4 +34,7 @@ $(function () {
             }
         });
     });
+
+    // O link de Login com GitHub (href="/oauth2/authorization/github")
+    // continua sendo gerenciado diretamente pelo Spring Security e não requer JWT para redirecionamento.
 });
