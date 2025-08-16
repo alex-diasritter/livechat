@@ -1,26 +1,29 @@
 const stompClient = new StompJs.Client({
     webSocketFactory: function() {
-        // Use SockJS for better browser compatibility
         return new SockJS('/livechat-websocket');
     }
 });
 
+let isConnected = false;
+
 stompClient.onConnect = (frame) => {
+    isConnected = true;
     setConnected(true);
-    console.log('Connected: ' + frame);
+    console.log('Conectado ao WebSocket: ' + frame);
     stompClient.subscribe('/topics/livechat', (message) => {
         updateLiveChat(JSON.parse(message.body).content);
     });
 };
 
 stompClient.onWebSocketError = (error) => {
-    console.error('Error with websocket', error);
-    console.error('WebSocket connection failed. Check if server is running and WebSocket endpoint is accessible.');
+    console.error('Erro com WebSocket', error);
+    alert('Não foi possível conectar ao chat. Sua sessão pode ter expirado. Por favor, faça login novamente.');
+    window.location.href = '/index.html';
 };
 
 stompClient.onStompError = (frame) => {
-    console.error('Broker reported error: ' + frame.headers['message']);
-    console.error('Additional details: ' + frame.body);
+    console.error('Broker reportou um erro: ' + frame.headers['message']);
+    console.error('Detalhes adicionais: ' + frame.body);
 };
 
 function setConnected(connected) {
@@ -28,51 +31,36 @@ function setConnected(connected) {
     $("#disconnect").prop("disabled", !connected);
     if (connected) {
         $("#conversation").show();
-    }
-    else {
+    } else {
         $("#conversation").hide();
     }
 }
 
 function connect() {
-    // *** LÓGICA ATUALIZADA: Recuperar o JWT e adicionar aos cabeçalhos ***
-    const jwtToken = localStorage.getItem('jwt_token'); // Pega o token do localStorage
-    
-    if (!jwtToken) {
-        alert('Por favor, faça login primeiro para acessar o chat.');
-        window.location.href = '/index.html';
-        return;
+    if (!isConnected) {
+        console.log('Tentando conectar ao WebSocket...');
+        stompClient.activate();
     }
-    
-    console.log('JWT Token encontrado:', jwtToken.substring(0, 20) + '...');
-    
-    // Adiciona o cabeçalho Authorization com o token JWT
-    const headers = {
-        'Authorization': 'Bearer ' + jwtToken
-    };
-
-    stompClient.connectHeaders = headers; // Define os cabeçalhos para a conexão WebSocket
-    
-    console.log('Tentando conectar ao WebSocket...');
-    stompClient.activate(); // Ativa a conexão WebSocket
 }
 
 function disconnect() {
     stompClient.deactivate();
+    isConnected = false;
     setConnected(false);
-    console.log("Disconnected");
-    // Opcional: Você pode querer remover o token do localStorage ao desconectar do chat
-    localStorage.removeItem('jwt_token');
+    console.log("Desconectado");
 }
 
 function sendMessage() {
-    // Para enviar mensagens, o token já foi enviado na conexão inicial do WebSocket
-    // se o seu Spring Security estiver configurado para interceptar mensagens STOMP.
-    stompClient.publish({
-        destination: "/livechat/new-message",
-        body: JSON.stringify({'user': $("#user").val(), 'message': $("#message").val()})
-    });
-    $("#message").val("");
+    const userValue = $("#user").val();
+    const messageValue = $("#message").val();
+
+    if (userValue && messageValue) {
+        stompClient.publish({
+            destination: "/livechat/new-message",
+            body: JSON.stringify({'user': userValue, 'message': messageValue})
+        });
+        $("#message").val("");
+    }
 }
 
 function updateLiveChat(message) {
@@ -81,7 +69,7 @@ function updateLiveChat(message) {
 
 $(function () {
     $("form").on('submit', (e) => e.preventDefault());
-    $( "#connect" ).click(() => connect());
-    $( "#disconnect" ).click(() => disconnect());
-    $( "#send" ).click(() => sendMessage());
+    $("#connect").click(() => connect());
+    $("#disconnect").click(() => disconnect());
+    $("#send").click(() => sendMessage());
 });
