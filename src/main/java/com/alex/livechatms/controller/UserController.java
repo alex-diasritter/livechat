@@ -1,5 +1,4 @@
 package com.alex.livechatms.controller;
-
 import com.alex.livechatms.domain.CreateUserDto;
 import com.alex.livechatms.domain.entities.Role;
 import com.alex.livechatms.domain.entities.User;
@@ -8,6 +7,7 @@ import com.alex.livechatms.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional; // Importar Optional
-// import java.util.Set; // Remova esta importação se não for mais utilizada
 
 @RestController
 public class UserController {
@@ -66,7 +68,6 @@ public class UserController {
         var user = new User();
         user.setUsername(dto.username());
         user.setPassword(passwordEncoder.encode(dto.password()));
-        // LINHA 50: CORRIGIDO de setRoles(Set.of(basicRole)) para setRole(basicRole)
         user.setRole(basicRole);
 
         userRepository.save(user);
@@ -75,10 +76,16 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/users")
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public ResponseEntity<List<User>> listUsers() {
-        var users = userRepository.findAll();
-        return ResponseEntity.ok(users);
+    @GetMapping("/current-user")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            return ResponseEntity.ok()
+                    .body(Map.of(
+                            "authenticated", true,
+                            "username", authentication.getName()
+                    ));
+        }
+        return ResponseEntity.ok()
+                .body(Map.of("authenticated", false));
     }
 }

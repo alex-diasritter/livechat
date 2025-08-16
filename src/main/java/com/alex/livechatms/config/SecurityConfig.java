@@ -57,7 +57,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/index.html", "/login.js",
                                 "/cadastro.html", "/cadastro.js",
-                                "/main.css", "/webjars/**" // Permite bibliotecas JS como SockJS
+                                "/main.css", "/webjars/**",
+                                "/api/current-user"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/users").permitAll()
                         .requestMatchers("/livechat-websocket/**").permitAll()

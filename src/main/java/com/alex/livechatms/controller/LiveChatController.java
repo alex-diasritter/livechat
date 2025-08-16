@@ -1,21 +1,28 @@
 package com.alex.livechatms.controller;
 import com.alex.livechatms.domain.ChatInput;
-import com.alex.livechatms.domain.ChatOutput;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
-
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 @Controller
 public class LiveChatController {
 
     @MessageMapping("/new-message")
     @SendTo("/topics/livechat")
-    public ChatOutput newMessage(ChatInput input) {
+    public Map<String, String> newMessage(ChatInput input, Principal principal) {
         String time = new SimpleDateFormat("HH:mm").format(new Date());
-        return new ChatOutput(HtmlUtils.htmlEscape("[" + time + "] "+ input.user() + ": " + input.message()));
+        String sender = (principal != null) ? principal.getName() : "Anônimo";
+
+        return Map.of(
+                "type", input.user().equals("System") ? "system" : "user",
+                "user", HtmlUtils.htmlEscape(input.user()),
+                "message", HtmlUtils.htmlEscape(input.message()),
+                "timestamp", time
+        );
     }
 }
